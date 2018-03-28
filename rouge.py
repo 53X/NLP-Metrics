@@ -35,8 +35,12 @@ class Rouge():
 
 		rouge_recall=(np.array(total_ngrams_matched))/(np.array(total_ngrams_summary))	
 
-		if((len(references)==1) or ((len(references)>1) and (averaging==False))):
+		if(len(references)==1):
 			
+			return(np.mean(rouge_recall))
+		
+		elif((len(references)>1) and (averaging==False)):
+
 			return(rouge_recall)
 		
 		else:
