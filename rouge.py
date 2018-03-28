@@ -9,6 +9,7 @@
 
 from nltk import ngrams
 from nltk.tokenize import word_tokenize
+import numpy as np
 
 
 class Rouge():
@@ -22,8 +23,7 @@ class Rouge():
 		ngram_candidate=ngrams(word_tokenize(candidate),n)
 		total_ngrams_matched=[]
 		total_ngrams_summary=[]
-		rouge_recall=[]
-			
+					
 		for ref in references:
 			count=0
 			ngram_reference=ngrams(word_tokenize(ref),n)
@@ -33,19 +33,30 @@ class Rouge():
 					count+=1
 			total_ngrams_matched.append(count)
 
-		if(len(references)==1):
-			averaging=False
+		rouge_recall=(np.array(total_ngrams_matched))/(np.array(total_ngrams_summary))	
+
+		if((len(references)==1) or ((len(references)>1) and (averaging==False))):
 			
-			
-		if(averaging==True):
-			for i in range(len(total_ngrams_summary)):
-				rouge_recall.append((np.sum(total_ngrams_matched)-total_ngrams_matched[i])/(np.sum(total_ngrams_summary)-total_ngrams_summary[i]))
+			return(rouge_recall)
+		
 		else:
-			rouge_recall.append(np.sum(total_ngrams_matched)/np.sum(total_ngrams_summary))
+
+			for i in range(len(rouge_recall)):
+				average=[]
+				dummy=list(rouge_recall)
+				dummy.remove(dummy[i])
+				average.append(max(dummy))
+
+			return(np.mean(average))	
+
+
+
 			
 
-	 	return np.mean(rouge_recall)
-
+			
+			
+			
+		
 	
 
 	#This function computes the length of the longest Common Subsequence between two given strings 
