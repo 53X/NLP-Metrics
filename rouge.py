@@ -53,14 +53,6 @@ class Rouge():
 
 			return(np.mean(average))	
 
-
-
-			
-
-			
-			
-			
-		
 	
 
 	#This function computes the length of the longest Common Subsequence between two given strings 
@@ -90,7 +82,32 @@ class Rouge():
 	#Function for ROUGE-L Score . This uses the concept of Longest common subsequence 
 	
 
-	def rouge_l(candidate,references,averaging=True):
+	def rouge_l(candidate,references,beta,averaging=True):
+
+		rouge_l_list=[]
+		for ref in references:
+			r_lcs=Rouge.lcs_length(ref,candidate)/len(ref)
+			p_lcs=Rouge.lcs_length(ref,candidate)/len(candidate)
+			score=((1+beta**2)(r_lcs*p_lcs))/(r_lcs+(beta**2)*p_lcs)
+			rouge_l_list.append(score)
+		if(len(references)==1):
+			
+			return(np.mean(rouge_l_list))
+		
+		elif((len(references)>1) and (averaging==False)):
+
+			return(rouge_l_list)
+		
+		else:
+
+			for i in range(len(rouge_l_list)):
+				average=[]
+				dummy=list(rouge_l_list)
+				dummy.remove(dummy[i])
+				average.append(max(dummy))
+
+			return(np.mean(average))	
+
 
 
 
