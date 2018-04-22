@@ -8,7 +8,7 @@
 #Library dependencies
 
 from nltk import ngrams
-from nltk.tokenize import word_tokenize
+from nltk.tokenize import word_tokenize,sent_tokenize
 import numpy as np
 
 
@@ -113,7 +113,7 @@ class Rouge():
 
 
 
-    #Function for ROUGE-L Score . This uses the concept of Longest common subsequence 
+    #Function for ROUGE-L Score . This uses the concept of LCS and it is evaluated at Sentence level
     
 
     def rouge_l_sentence(candidate,references,beta,averaging=True):
@@ -143,7 +143,45 @@ class Rouge():
             return(np.mean(average))    
 
     
-    #def rouge_l_summary(candidate,references,beta,averaging=True):
+    # Summary level ROUGE-L score
+
+    def rouge_l_summary(candidate,references,beta,averaging=True):
+
+        rouge_l_list=[]
+        candidate_list=sent_tokenize(candidate)
+        for ref in references:
+            sentence_list=sent_tokenize(ref)
+            sum_value=0
+            for reference_sentence in sentence_list:
+                l=[]
+                for candidate_sentence in candidate_list:
+                    d=Rouge.lcs(reference_sentence,candidate_sentence,len(reference_sentence),len(candidate_sentence)).split()
+                    l+=d
+                sum_value=sum_value+len(np.unique(l))
+            r_lcs=sum_value/word_tokenize(ref)
+            p_lcs=sum_value/word_tokenize(candidate)
+            score=((1+beta**2)(r_lcs*p_lcs))/(r_lcs+(beta**2)*p_lcs)
+            rouge_l_list.append(score)
+            if(len(references)==1):
+
+                return(np.mean(rouge_l_list))
+        
+            elif((len(references)>1) and (averaging==False)):
+
+                return(rouge_l_list)
+        
+            else:
+
+                for i in range(len(rouge_l_list)):
+                    average=[]
+                    dummy=list(rouge_l_list)
+                    dummy.remove(dummy[i])
+                    average.append(max(dummy))
+
+                return(np.mean(average))
+
+
+
 
 
 
