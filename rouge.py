@@ -1,8 +1,9 @@
 from nltk.util import ngrams
-from nltk.tokenize import TreebankWordTokenizer
+from nltk.tokenize import TreebankWordTokenizer,PunktSentenceTokenizer
 import numpy as np
 
 tokenizer=TreebankWordTokenizer()
+sentence_tokenizer=PunktSentenceTokenizer()
 
 
 class Rouge():
@@ -92,9 +93,9 @@ class Rouge():
         
         #averaging using the Jacknifing procedure
 
-        if(len(references)==1):
+        if len(references)==1:
             return(np.mean(rouge_l_list))
-        elif((len(references)>1) and (averaging==False)):
+        elif (len(references)>1) and (averaging==False):
             return(rouge_l_list)
         else:
             for i in range(len(rouge_l_list)):
@@ -104,48 +105,53 @@ class Rouge():
                 average.append(max(dummy))
             return(np.mean(average))    
 
-    '''
+    
     # Summary level ROUGE-L score
 
-    def rouge_l_summary(candidate,references,beta,averaging=True):
+    def rouge_l_summary(references,candidate,beta,averaging=True):
 
         rouge_l_list=[]
-        candidate_list=sent_tokenize(candidate)
+        cand_sent_list=sentence_tokenizer.tokenize(candidate)
+        print('cand_sent_list:',cand_sent_list)
         for ref in references:
-            sentence_list=sent_tokenize(ref)
+            ref_sent_list=sentence_tokenizer.tokenize(ref)
+            print('ref_sent_list:',ref_sent_list)
             sum_value=0
-            for reference_sentence in sentence_list:
+            for ref_sent in ref_sent_list:
                 l=[]
-                for candidate_sentence in candidate_list:
-                    d=(Rouge.lcs(reference_sentence,candidate_sentence,len(reference_sentence),len(candidate_sentence))).split()
+                arg1=tokenizer.tokenize(ref_sent)
+                print('arg1:',arg1)
+                for cand_sent in cand_sent_list:
+                    arg2=tokenizer.tokenize(cand_sent)
+                    print('arg2:',arg2)
+                    d=tokenizer.tokenize(Rouge.lcs(arg1,arg2,len(arg1),len(arg2))[1])
+                    print("d:",d)
                     l+=d
                 sum_value=sum_value+len(np.unique(l))
-            r_lcs=sum_value/len(word_tokenize(ref))
-            p_lcs=sum_value/len(word_tokenize(candidate))
-            score=((1+beta**2)(r_lcs*p_lcs))/(r_lcs+(beta**2)*p_lcs)
+                print('sum_value:',sum_value)
+            
+            r_lcs=sum_value/len(tokenizer.tokenize(ref))
+            print('r_lcs:',r_lcs)
+            p_lcs=sum_value/len(tokenizer.tokenize(candidate))
+            print('p_lcs:',p_lcs)
+            score=((1+beta**2)*r_lcs*p_lcs)/(r_lcs+(beta**2)*p_lcs)
             rouge_l_list.append(score)
             
-            if(len(references)==1):
-
+            if len(references)==1:
                 return(np.mean(rouge_l_list))
-        
-            elif((len(references)>1) and (averaging==False)):
-
+            elif (len(references)>1) and (averaging==False):
                 return(rouge_l_list)
-        
             else:
-
                 for i in range(len(rouge_l_list)):
                     average=[]
                     dummy=list(rouge_l_list)
                     dummy.remove(dummy[i])
                     average.append(max(dummy))
-
                 return(np.mean(average))
 
-'''
 
-print(Rouge.rouge_l_sentence(['police killed the gunman'], 'police kill the gunman', 1,averaging=True))
+
+print(Rouge.rouge_l_summary(['police killed the gunman'], 'police kill the gunman', 1,averaging=True))
 
 
 
