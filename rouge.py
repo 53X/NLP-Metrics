@@ -70,42 +70,41 @@ class Rouge():
             else:
                 j-=1
 
-        s="".join(lcs)
-        return(len(s.split()),s) 
+        s=" ".join(lcs)
+        return(len(s.split()),s)
 
 
 
-'''
+
     #Function for ROUGE-L Score . This uses the concept of LCS and it is evaluated at Sentence level
     
 
-    def rouge_l_sentence(candidate,references,beta,averaging=True):
+    def rouge_l_sentence(references,candidate,beta,averaging=True):
 
         rouge_l_list=[]
         for ref in references:
-            r_lcs=Rouge.lcs_length(ref,candidate)/len(ref)
-            p_lcs=Rouge.lcs_length(ref,candidate)/len(candidate)
-            score=((1+beta**2)(r_lcs*p_lcs))/(r_lcs+(beta**2)*p_lcs)
+            arg1=tokenizer.tokenize(ref)
+            arg2=tokenizer.tokenize(candidate)
+            r_lcs=Rouge.lcs(arg1, arg2, len(arg1), len(arg2))[0]/len(arg1)
+            p_lcs=Rouge.lcs(arg1, arg2, len(arg1), len(arg2))[0]/len(arg2)
+            score=((1+beta**2)*r_lcs*p_lcs)/(r_lcs+(beta**2)*p_lcs)
             rouge_l_list.append(score)
+        
+        #averaging using the Jacknifing procedure
+
         if(len(references)==1):
-            
             return(np.mean(rouge_l_list))
-        
         elif((len(references)>1) and (averaging==False)):
-
             return(rouge_l_list)
-        
         else:
-
             for i in range(len(rouge_l_list)):
                 average=[]
                 dummy=list(rouge_l_list)
                 dummy.remove(dummy[i])
                 average.append(max(dummy))
-
             return(np.mean(average))    
 
-    
+    '''
     # Summary level ROUGE-L score
 
     def rouge_l_summary(candidate,references,beta,averaging=True):
@@ -146,7 +145,7 @@ class Rouge():
 
 '''
 
-print(Rouge.rouge_n(['the cat was under the bed'], 'the cat was found under the bed', 2,averaging=True))
+print(Rouge.rouge_l_sentence(['police killed the gunman'], 'police kill the gunman', 1,averaging=True))
 
 
 
