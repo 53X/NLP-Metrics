@@ -22,25 +22,15 @@ class Rouge():
                 dummy.remove(dummy[i])
                 average.append(max(dummy))
             return(np.mean(average))
-    
-   #Function for the ROUGE-N score , where N is the user-defined length of the ngram
-    
-    def rouge_n(references, candidate, n, averaging=True):
 
-        ngram_cand = ngrams(tokenizer.tokenize(candidate), n)
-        ng_cand=list(ngram_cand)
-        rouge_recall = []
-        for ref in references:
-            count = 0
-            ngram_ref = ngrams(tokenizer.tokenize(ref), n)
-            ng_ref = list(ngram_ref)
-            for ngr in ng_cand:
-                if ngr in ng_ref:
-                    count+=1
-            rouge_recall.append(count/len(ng_ref))
+    def get_score(r_lcs,p_lcs,beta):
 
-        return Rouge.jacknifing(rouge_recall,averaging=averaging)  
-
+        try:
+            score=((1+beta**2)*r_lcs*p_lcs)/(r_lcs+(beta**2)*p_lcs)
+        except ZeroDivisionError as e:
+            score=0
+        return score    
+            
     # Code for LCS of 2 strings and it's length. 
     
     def lcs(X, Y, m, n):
@@ -72,7 +62,26 @@ class Rouge():
 
         s=" ".join(lcs)
         return(len(s.split()),s)
+        
+    
+   #Function for the ROUGE-N score , where N is the user-defined length of the ngram
+    
+    def rouge_n(references, candidate, n, averaging=True):
 
+        ngram_cand = ngrams(tokenizer.tokenize(candidate), n)
+        ng_cand=list(ngram_cand)
+        rouge_recall = []
+        for ref in references:
+            count = 0
+            ngram_ref = ngrams(tokenizer.tokenize(ref), n)
+            ng_ref = list(ngram_ref)
+            for ngr in ng_cand:
+                if ngr in ng_ref:
+                    count+=1
+            rouge_recall.append(count/len(ng_ref))
+        return Rouge.jacknifing(rouge_recall,averaging=averaging)  
+
+    
     #Function for ROUGE-L Score . This uses the concept of LCS and it is evaluated at Sentence level
     
     def rouge_l_sentence(references,candidate,beta,averaging=True):
@@ -83,10 +92,8 @@ class Rouge():
             arg2=tokenizer.tokenize(candidate)
             r_lcs=Rouge.lcs(arg1, arg2, len(arg1), len(arg2))[0]/len(arg1)
             p_lcs=Rouge.lcs(arg1, arg2, len(arg1), len(arg2))[0]/len(arg2)
-            score=((1+beta**2)*r_lcs*p_lcs)/(r_lcs+(beta**2)*p_lcs)
+            score=Rouge.get_score(r_lcs,p_lcs,beta=beta)
             rouge_l_list.append(score)
-        
-        #averaging using the Jacknifing procedure
         return Rouge.jacknifing(rouge_l_list,averaging=averaging)
         
     
@@ -109,10 +116,31 @@ class Rouge():
                 sum_value=sum_value+len(np.unique(l))
             r_lcs=sum_value/len(tokenizer.tokenize(ref))
             p_lcs=sum_value/len(tokenizer.tokenize(candidate))
-            score=((1+beta**2)*r_lcs*p_lcs)/(r_lcs+(beta**2)*p_lcs)
+            score=Rouge.get_score(r_lcs,p_lcs,beta=beta)
             rouge_l_list.append(score)
-            return Rouge.jacknifing(rouge_l_list,averaging=averaging)
+        return Rouge.jacknifing(rouge_l_list,averaging=averaging)
 
+    def normalized_pairwise_lcs(references,candidate,beta,averaging=True):
+
+        normalized_list=[]
+        cand_sent_list=sentence_tokenizer.tokenize(candidate)
+        for ref in references:
+            ref_sent_list=sentence_tokenizer.tokenize(ref)
+            scr=[]
+            for r_sent in ref_sent_list:
+                s=[]
+                arg1=tokenizer.tokenize(r_sent)
+                for c_sent in cand_sent_list:
+                    arg2=tokenizer.tokenize(c_sent)
+                    s.append(Rouge.lcs(arg1,arg2,len(arg1),len(arg2))[0])
+                scr.append(max(s))
+            r_lcs=2*sum(scr)/len(tokenizer.tokenize(ref))
+            p_lcs=2*sum(scr)/len(tokenizer.tokenize(candidate))
+            score=Rouge.get_score(r_lcs,p_lcs,beta=beta)   
+            normalized_list.append(score)
+        return Rouge.jacknifing(normalized_list,averaging=averaging)
+            
+    
     def rouge_s(references,candidate,beta,d_skip=None,averaging=True):
 
         rouge_s_list=[]
@@ -127,19 +155,11 @@ class Rouge():
                     count=count+1
             r_lcs=count/len(ref_skip_list)
             p_lcs=count/len(cand_skip_list)
-            score=((1+beta**2)*r_lcs*p_lcs)/(r_lcs+(beta**2)*p_lcs)
-            rouge_s_list.append(score)
-        return Rouge.jacknifing(rouge_s_list,averaging=averaging)    
+            score=Rouge.get_score(r_lcs,p_lcs,beta)    
+            rouge_s_list.append(score)         
+        return Rouge.jacknifing(rouge_s_list,averaging=averaging) 
 
-
-
-
-
-
-print(Rouge.rouge_s(['police killed the gunman'], 'the gunman kill police', beta=1,averaging=False))
-
-
-
+   
 
         
 
