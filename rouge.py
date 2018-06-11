@@ -1,85 +1,47 @@
-#This is an implementation of the ROUGE score introduced in a paper by Lin et. al(2004)
-
-
-
-#ROUGE - Recall -Oriented Understudy for Gisting Evaluation
-
-
-#Library dependencies
-
-from nltk import ngrams
-from nltk.tokenize import word_tokenize,sent_tokenize
+from nltk.util import ngrams
+from nltk.tokenize import TreebankWordTokenizer
 import numpy as np
+
+tokenizer=TreebankWordTokenizer()
 
 
 class Rouge():
 
 
-
     #Function for the ROUGE-N score , where N is the user-defined length of the ngram
 
-    def rouge_n(references,candidate,n,averaging=True):
+    def rouge_n(references, candidate, n, averaging=True):
 
-        ngram_candidate=ngrams(word_tokenize(candidate),n)
-        total_ngrams_matched=[]
-        total_ngrams_summary=[]
-                    
+        ngram_cand = ngrams(tokenizer.tokenize(candidate), n)
+        ng_cand=list(ngram_cand)
+        rouge_recall = []
         for ref in references:
-            count=0
-            ngram_reference=ngrams(word_tokenize(ref),n)
-            total_ngrams_summary.append(ngram_reference)
-            for n in ngram_candidate:
-                if n in ngram_reference:
+            count = 0
+            ngram_ref = ngrams(tokenizer.tokenize(ref), n)
+            ng_ref = list(ngram_ref)
+            for ngr in ng_cand:
+                if ngr in ng_ref:
                     count+=1
-            total_ngrams_matched.append(count)
+            rouge_recall.append(count/len(ng_ref))
 
-        rouge_recall=(np.array(total_ngrams_matched))/(np.array(total_ngrams_summary))  
+        #averaging using Jacknifing procedure
 
         if(len(references)==1):
-            
             return(np.mean(rouge_recall))
-        
-        elif((len(references)>1) and (averaging==False)):
-
+        elif((len(references) > 1) and (averaging == False)):
             return(rouge_recall)
-        
         else:
-
             for i in range(len(rouge_recall)):
                 average=[]
                 dummy=list(rouge_recall)
                 dummy.remove(dummy[i])
                 average.append(max(dummy))
-
             return(np.mean(average))    
 
     
 
-    #This function computes the length of the longest Common Subsequence between two given strings 
-
+    # Code for LCS of 2 strings and it's length. 
     
-    def lcs_length(references, candidate):
-
-
-        if(len(references)< len(candidate)):
-            candidate, references = references,candidate
-
-        lengths = [[0 for i in range(0,len(candidate)+1)] for j in range(0,len(references)+1)]
-
-        for j in range(1,len(candidate)+1):
-            for i in range(1,len(references)+1):
-                if(references[i-1] == candidate[j-1]):
-                    lengths[i][j] = lengths[i-1][j-1] + 1
-                else:
-                    lengths[i][j] = max(lengths[i-1][j] , lengths[i][j-1])
-
-        return lengths[len(references)][len(candidate)]
-
-
-    # This function returns the Longest commmon subsequence between two given strings
-    
-    
-
     def lcs(X, Y, m, n):
         
         L = [[0 for x in range(n+1)] for x in range(m+1)]
@@ -108,11 +70,12 @@ class Rouge():
             else:
                 j-=1
 
-        return ("".join(lcs)) 
+        s="".join(lcs)
+        return(len(s.split()),s) 
 
 
 
-
+'''
     #Function for ROUGE-L Score . This uses the concept of LCS and it is evaluated at Sentence level
     
 
@@ -155,13 +118,14 @@ class Rouge():
             for reference_sentence in sentence_list:
                 l=[]
                 for candidate_sentence in candidate_list:
-                    d=Rouge.lcs(reference_sentence,candidate_sentence,len(reference_sentence),len(candidate_sentence)).split()
+                    d=(Rouge.lcs(reference_sentence,candidate_sentence,len(reference_sentence),len(candidate_sentence))).split()
                     l+=d
                 sum_value=sum_value+len(np.unique(l))
-            r_lcs=sum_value/word_tokenize(ref)
-            p_lcs=sum_value/word_tokenize(candidate)
+            r_lcs=sum_value/len(word_tokenize(ref))
+            p_lcs=sum_value/len(word_tokenize(candidate))
             score=((1+beta**2)(r_lcs*p_lcs))/(r_lcs+(beta**2)*p_lcs)
             rouge_l_list.append(score)
+            
             if(len(references)==1):
 
                 return(np.mean(rouge_l_list))
@@ -180,7 +144,9 @@ class Rouge():
 
                 return(np.mean(average))
 
+'''
 
+print(Rouge.rouge_n(['the cat was under the bed'], 'the cat was found under the bed', 2,averaging=True))
 
 
 
