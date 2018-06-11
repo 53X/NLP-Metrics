@@ -1,6 +1,7 @@
 from nltk.util import ngrams
 from nltk.tokenize import TreebankWordTokenizer,PunktSentenceTokenizer
 import numpy as np
+from nltk import skipgrams
 
 tokenizer=TreebankWordTokenizer()
 sentence_tokenizer=PunktSentenceTokenizer()
@@ -64,7 +65,6 @@ class Rouge():
                 i-=1
                 j-=1
                 index-=1
-
             elif L[i-1][j] > L[i][j-1]:
                 i-=1
             else:
@@ -113,9 +113,30 @@ class Rouge():
             rouge_l_list.append(score)
             return Rouge.jacknifing(rouge_l_list,averaging=averaging)
 
+    def rouge_s(references,candidate,beta,d_skip=None,averaging=True):
+
+        rouge_s_list=[]
+        k_c=len(candidate) if d_skip == None else d_skip
+        cand_skip_list=list(skipgrams(tokenizer.tokenize(candidate),n=2,k=k_c))
+        for ref in references:
+            k_ref=len(ref) if d_skip == None else d_skip
+            ref_skip_list=list(skipgrams(tokenizer.tokenize(ref),n=2,k=k_ref))
+            count=0
+            for bigram in cand_skip_list:
+                if bigram in ref_skip_list:
+                    count=count+1
+            r_lcs=count/len(ref_skip_list)
+            p_lcs=count/len(cand_skip_list)
+            score=((1+beta**2)*r_lcs*p_lcs)/(r_lcs+(beta**2)*p_lcs)
+            rouge_s_list.append(score)
+        return Rouge.jacknifing(rouge_s_list,averaging=averaging)    
 
 
-print(Rouge.rouge_l_summary(['police killed the gunman'], 'police kill the gunman', 1,averaging=False))
+
+
+
+
+print(Rouge.rouge_s(['police killed the gunman'], 'the gunman kill police', beta=1,averaging=False))
 
 
 
